@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Excel Tablosu Oluşturma</title>
+  <style>
+    table {
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      border: 1px solid black;
+      padding: 5px;
+      text-align: center;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+    }
+    
+    .checkbox {
+      transform: scale(1.5);
+    }
+    
+    .month-info {
+      font-weight: bold;
+    }
+    
+    .weekend {
+      background-color: yellow;
+    }
+    
+    .permission-T {
+      background-color: yellow;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var startDate = moment().startOf('month');
+      var endDate = moment().endOf('month');
+      
+      var table = document.getElementById("excel-table");
+      var headerRow;
+      var monthInfoRow;
+      var permissionRow;
+      
+      var personelSelect = document.getElementById("personel-select");
+
+      // Personel seçiminde değişiklik olduğunda tabloyu ve sonuçları sıfırla
+      personelSelect.addEventListener("change", function() {
+        // Tabloyu temizle
+        while (table.rows.length > 0) {
+          table.deleteRow(0);
+        }
+      
+        // Sonuç div'ını temizle
+        document.getElementById("result").innerHTML = "";
+
+        // Yeni tabloyu oluştur
+        headerRow = table.insertRow();
+        monthInfoRow = table.insertRow();
+        permissionRow = table.insertRow();
+      
+        var currentDate = moment(startDate);
+        while (currentDate.isSameOrBefore(endDate)) {
+          var currentDay = currentDate.format("D");
+          
+          var headerCell = document.createElement("th");
+          headerCell.textContent = currentDay;
+          headerRow.appendChild(headerCell);
+          
+          var monthInfoCell = document.createElement("td");
+          monthInfoCell.classList.add("month-info");
+          monthInfoCell.textContent = moment(currentDate).format("MMMM YYYY");
+          monthInfoRow.appendChild(monthInfoCell);
+          
+          var permissionCell = document.createElement("td");
+          var permissionCheckbox = document.createElement("input");
+          permissionCheckbox.type = "checkbox";
+          permissionCheckbox.className = "checkbox";
+          permissionCell.appendChild(permissionCheckbox);
+          
+          if (currentDate.isoWeekday() === 6 || currentDate.isoWeekday() === 7) {
+            headerCell.classList.add("weekend");
+            permissionCell.classList.add("weekend");
+            permissionCheckbox.checked = true; // Hafta sonları default olarak tikli
+          }
+          
+          permissionRow.appendChild(permissionCell);
+          
+          currentDate.add(1, "day");
+        }
+      });
+
+      // Initiate a change event to create the initial table
+      var event = new Event('change');
+      personelSelect.dispatchEvent(event);
+      
+      var sendButton = document.getElementById("send-button");
+      sendButton.addEventListener("click", function() {
+        var selectedPersonel = personelSelect.value;
+        
+        var newTable = document.createElement("table");
+        var newHeaderRow = newTable.insertRow();
+        var newPermissionRow = newTable.insertRow();
+        
+        var checkboxes = document.getElementsByClassName("checkbox");
+        for (var i = 0; i < checkboxes.length; i++) {
+          var isChecked = checkboxes[i].checked;
+          
+          var newHeaderCell = document.createElement("th");
+          newHeaderCell.textContent = headerRow.cells[i].textContent;
+          newHeaderRow.appendChild(newHeaderCell);
+          
+          var newPermissionCell = document.createElement("td");
+          newPermissionCell.textContent = isChecked ? "T" : "HV";
+          newPermissionCell.className = isChecked ? "permission-T" : "";
+          newPermissionRow.appendChild(newPermissionCell);
+        }
+        
+        var resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "";
+        resultDiv.appendChild(document.createTextNode("Personel: " + selectedPersonel));
+        resultDiv.appendChild(document.createElement("br"));
+        resultDiv.appendChild(newTable);
+
+        var mailButton = document.createElement("button");
+        mailButton.textContent = "Mail At";
+        mailButton.addEventListener("click", function() {
+          var email = "alpar.serimer@turktelekom.com.tr";
+          var subject = selectedPersonel + " Puantaj";
+          var body = "Merhaba,\n\nAşağıda Excel tablosu bulunmaktadır:\n\n" + newTable.outerHTML + "\n\nİyi çalışmalar!";
+          var mailToLink = "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+          window.location.href = mailToLink;
+        });
+        
+        resultDiv.appendChild(mailButton);
+      });
+
+      var clearButton = document.getElementById("clear-button");
+      clearButton.addEventListener("click", function() {
+        var checkboxes = document.getElementsByClassName("checkbox");
+        for (var i = 0; i < checkboxes.length; i++) {
+          checkboxes[i].checked = false;
+          
+          if (checkboxes[i].parentNode.parentNode.classList.contains("weekend")) {
+            checkboxes[i].checked = true;
+          }
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <h2>Excel Tablosu</h2>
+
+  <h3>Personel Seçimi:</h3>
+  <select id="personel-select">
+    <option value="ilkkan Alpar Serimer">ilkkan Alpar Serimer</option>
+    <option value="Emrah Al">Emrah Al</option>
+    <option value="İbrahim Ağturk">İbrahim Ağturk</option>
+    <option value="Bilal Dinler">Bilal Dinler</option>
+  </select>
+
+  <table id="excel-table"></table>
+
+  <button id="send-button">Gönder</button>
+  <button id="clear-button">Temizle</button>
+
+  <div id="result"></div>
+</body>
+</html>
